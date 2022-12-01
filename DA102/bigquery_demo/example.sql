@@ -10,6 +10,5 @@ SELECT
   MAX(tip_amount) AS highest_tip,
   MAX(passenger_count) AS most_passengers,
   AVG(trip_distance) AS avg_distance,
-  AVG(tip_amount) AS avg_tip,
-  AVG(passenger_count) AS avg_passengers
+  AVG(tip_amount) AS avg_tip
 FROM `bigquery-public-data.new_york_taxi_trips.tlc_yellow_trips_2022` 
