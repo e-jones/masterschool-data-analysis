@@ -1,0 +1,2 @@
+-- There is nothing here!
+-- Let's write some SQL code
