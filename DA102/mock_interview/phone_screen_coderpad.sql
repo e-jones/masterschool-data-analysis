@@ -1,6 +1,19 @@
 /*
 https://coderpad.io/
 
+
+Evan's Tips:
+- Its okay to be nervous 
+- DONT START CODING FIRST -- ASK QUESTIONS 
+- DONT ASSUME THE DATA IS HIGH QUALITY
+- Write Readable code (use indent, capitalize clauses, aliases)
+- TALK THROUGH YOUR THOUGHT PROCESS AS YOU WRITE 
+---- WHY DID YOU DECIDE THAT TABLE / JOIN TYPE / APPROACH 
+- WITH clauses are your friends for advanced queries -- run in steps!
+- Practice with your friends
+
+
+
 CoderPad provides a basic SQL sandbox with the following schema.
 You can also use commands like '\dt;' and '\d employees;'
 
