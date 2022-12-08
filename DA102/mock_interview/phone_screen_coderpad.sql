@@ -1,4 +1,6 @@
 /*
+https://coderpad.io/
+
 CoderPad provides a basic SQL sandbox with the following schema.
 You can also use commands like '\dt;' and '\d employees;'
 
