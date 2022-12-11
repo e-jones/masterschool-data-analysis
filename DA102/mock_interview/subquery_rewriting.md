@@ -1,0 +1,158 @@
+-- 102.3 Number 18 - Subquery Mania
+
+You are given this subquery which is pretty hard to read and the code looks a little duplicative
+
+Question: Find the top sales reps by each region:
+
+```sql
+SELECT t3.rep_name, t3.region_name, t3.total_amt
+FROM(SELECT region_name, MAX(total_amt) total_amt
+     FROM(SELECT s.name rep_name, r.name region_name, SUM(o.total_amt_usd) total_amt
+             FROM sales_reps s
+             JOIN accounts a
+             ON a.sales_rep_id = s.id
+             JOIN orders o
+             ON o.account_id = a.id
+             JOIN region r
+             ON r.id = s.region_id
+             GROUP BY 1, 2) t1
+     GROUP BY 1) t2
+JOIN (SELECT s.name rep_name, r.name region_name, SUM(o.total_amt_usd) total_amt
+     FROM sales_reps s
+     JOIN accounts a
+     ON a.sales_rep_id = s.id
+     JOIN orders o
+     ON o.account_id = a.id
+     JOIN region r
+     ON r.id = s.region_id
+     GROUP BY 1,2
+     ORDER BY 3 DESC) t3
+ON t3.region_name = t2.region_name AND t3.total_amt = t2.total_amt;
+```
+
+Let's refactor the above to use `WITH` clause so it's easier to read by taking the subqueries and moving them to the top of the code. Notice how simiar `t1` and `t3` are!
+
+```sql
+WITH t1 AS (
+     -- Get the sales reps names with the most orders by region
+     SELECT 
+          s.name AS rep_name, 
+          r.name AS region_name, 
+          SUM(o.total_amt_usd) AS total_amt
+     FROM sales_reps s
+     JOIN accounts a
+     ON a.sales_rep_id = s.id
+     JOIN orders o
+     ON o.account_id = a.id
+     JOIN region r
+     ON r.id = s.region_id
+     GROUP BY rep_name, region_name
+)
+
+, t2 AS (
+     -- aggregate the orders by region name ('West' etc)
+     SELECT 
+          region_name, 
+          MAX(total_amt) AS total_amt
+     FROM t1
+     GROUP BY region_name
+)
+
+, t3 AS (
+     -- Rank the sales reps by most orders highest to lowest
+     SELECT 
+          s.name AS rep_name, 
+          r.name AS region_name, 
+          SUM(o.total_amt_usd) AS total_amt
+     FROM sales_reps s
+     JOIN accounts a
+     ON a.sales_rep_id = s.id
+     JOIN orders o
+     ON o.account_id = a.id
+     JOIN region r
+     ON r.id = s.region_id
+     GROUP BY rep_name, region_name
+     ORDER BY total_amt DESC
+)
+
+-- Show the highest earning reps for each region
+SELECT 
+     t3.rep_name, 
+     t3.region_name, 
+     t3.total_amt
+FROM t2 
+JOIN t3 -- This is an INNER JOIN so it will only show regions in t2
+ON 
+     t3.region_name = t2.region_name 
+     AND t3.total_amt = t2.total_amt;
+```
+
+## Updating the code to be more readable and using fewer joins
+
+Now for the fun part. It looks like `t1` and `t3` are doing very similar things and we can possibly cut down on repetitive code and save some query engine time. Let's remove `t3` entirely
+
+```sql
+WITH t1 AS (
+     -- Get the sales reps names with the most orders by region
+     SELECT 
+          s.name AS rep_name, 
+          r.name AS region_name, 
+          SUM(o.total_amt_usd) AS total_amt
+     FROM sales_reps s
+     JOIN accounts a
+     ON a.sales_rep_id = s.id
+     JOIN orders o
+     ON o.account_id = a.id
+     JOIN region r
+     ON r.id = s.region_id
+     GROUP BY rep_name, region_name
+)
+
+, t2 AS (
+     -- aggregate the orders by region name ('West' etc)
+     SELECT 
+          region_name, 
+          MAX(total_amt) AS total_amt
+     FROM t1
+     GROUP BY region_name
+)
+
+-- Show the highest earning reps for each region
+SELECT 
+     t1.rep_name, 
+     t1.region_name, 
+     t1.total_amt
+FROM t2 
+JOIN t1 -- This is an INNER JOIN so it will only show regions in t2
+ON 
+     t1.region_name = t2.region_name 
+     AND t1.total_amt = t2.total_amt
+ORDER BY total_amt DESC
+```
+
+## A Better solution is to use window functions
+TODO: Make this work in Postgres
+
+```sql
+     -- aggregate all individual reps' sales for their regions
+     SELECT 
+          s.name AS rep_name, 
+          r.name AS region_name, 
+          SUM(o.total_amt_usd) AS total_amt,
+          RANK() OVER(ORDER BY SUM(o.total_amt_usd) DESC) AS sales_rank_overall,
+          -- RANK() OVER(r.name ORDER BY SUM(o.total_amt_usd) DESC) AS sales_rank_by_region
+     FROM sales_reps s
+     JOIN accounts a
+     ON a.sales_rep_id = s.id
+     JOIN orders o
+     ON o.account_id = a.id
+     JOIN region r
+     ON r.id = s.region_id
+     GROUP BY rep_name, region_name
+```
+
+
+
+
+
+
