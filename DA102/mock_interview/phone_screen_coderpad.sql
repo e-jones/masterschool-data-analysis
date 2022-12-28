@@ -82,6 +82,48 @@ ORDER BY count_of_employees DESC
 
 -- BONUS: What is highest paid employee in each department?
 
+-- SOLUTION OPTION 1: Use CTEs
+WITH top_salary AS (
+
+SELECT
+  MAX(salary) AS top_salary,
+  department_id
+FROM employees
+GROUP BY department_id
+)
+
+SELECT 
+  top_salary,
+  e.first_name,
+  e.last_name,
+  d.name AS department_name
+FROM top_salary AS t
+JOIN employees AS e 
+  ON t.top_salary = e.salary
+  AND t.department_id = e.department_id
+JOIN departments AS d 
+  ON e.department_id = d.id
+  
+-- SOLUTION OPTION 2: Use WINDOW functions
+WITH ranked_salaries AS (
+SELECT
+  first_name,
+  last_name,
+  salary,
+  department_id,
+  RANK() OVER(PARTITION BY department_id ORDER BY salary DESC) AS dept_salary_rank
+FROM employees
+)
+
+SELECT
+  first_name,
+  last_name,
+  salary,
+  name AS dept_name
+FROM ranked_salaries AS r
+JOIN departments AS d ON r.department_id = d.id 
+WHERE dept_salary_rank = 1
+
 
 
 
