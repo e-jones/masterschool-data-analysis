@@ -149,12 +149,25 @@ ORDER BY total_amt DESC
 SELECT 
      s.name AS rep_name, 
      r.name AS region_name, 
+     SUBSTRING(s.name,0,2) AS first_letter,
      SUM(o.total_amt_usd) AS total_amt,
      -- rank the sales reps by their total orders
      RANK() OVER(ORDER BY SUM(o.total_amt_usd) DESC) AS sales_rank_overall,
      -- rank the sales reps WITHIN EACH REGION by their total orders
      -- we do this using https://www.youtube.com/watch?v=xFeOVIIRyvQ
-     RANK() OVER(PARTITION BY r.name ORDER BY SUM(o.total_amt_usd) DESC) AS sales_rank_by_region
+     RANK() OVER(PARTITION BY r.name ORDER BY SUM(o.total_amt_usd) DESC) AS sales_rank_by_region,
+     RANK() OVER(PARTITION BY SUBSTRING(s.name,0,2) ORDER BY SUM(o.total_amt_usd) DESC) AS sales_rank_by_first_letter,
+     
+     RANK() OVER(
+               -- these are my buckets
+               PARTITION BY 
+                    r.name, -- first bucket all reps into their regions 
+                    SUBSTRING(s.name,0,2) -- next within those region buckets do the first letter
+               -- this is how I want each bucket ordered
+               ORDER BY SUM(o.total_amt_usd) DESC
+          ) 
+     AS sales_rank_by_region_then_first_letter
+
 FROM sales_reps AS s
 JOIN accounts AS a
      ON a.sales_rep_id = s.id
@@ -162,11 +175,12 @@ JOIN orders o
      ON o.account_id = a.id
 JOIN region r
      ON r.id = s.region_id
+-- WHERE SUBSTRING(s.name,0,2) = 'E'
 GROUP BY 
      rep_name, 
      region_name
 ORDER BY 
-     sales_rank_by_region, 
+     rep_name, 
      total_amt DESC
 ```
 
