@@ -180,8 +180,9 @@ GROUP BY
      rep_name, 
      region_name
 ORDER BY 
-     rep_name, 
-     total_amt DESC
+     region_name,
+     first_letter,
+     sales_rank_by_region_then_first_letter ASC
 ```
 
 
