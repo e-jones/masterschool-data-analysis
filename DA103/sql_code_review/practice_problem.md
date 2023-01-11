@@ -197,7 +197,54 @@ ORDER BY total_amt DESC
 For top sales by region we can look into using WINDOW functions.
 
 ```sql
-TBD
+SELECT 
+     s.name AS rep_name, 
+     r.name AS region_name, 
+     SUBSTRING(s.name,1,1) AS first_letter,
+     SUM(o.total_amt_usd) AS total_amt,
+     -- rank the sales reps by their total orders
+     RANK() OVER(
+               -- window size
+               ORDER BY SUM(o.total_amt_usd) DESC
+          ) AS sales_rank_overall,
+
+     -- WINDOW BASED ON REGION NAME
+     RANK() OVER(
+               -- window size (for each region)
+               PARTITION BY r.name
+
+               ORDER BY SUM(o.total_amt_usd) DESC
+          ) AS sales_rank_within_region,
+
+     -- WINDOW BASED ON FIRST LETTER
+     RANK() OVER(
+               -- window size (for each region)
+               PARTITION BY SUBSTRING(s.name,1,1)
+
+               ORDER BY SUM(o.total_amt_usd) DESC
+          ) AS sales_rank_by_first_letter,
+
+     -- WINDOW BASED ON REGION AND THEN FIRST LETTER
+     RANK() OVER(
+               -- window size (for each region)
+               PARTITION BY 
+                    r.name, -- region
+                    SUBSTRING(s.name,1,1)
+               ORDER BY SUM(o.total_amt_usd) DESC
+          ) AS sales_rank_by_region_and_first_letter
+
+FROM sales_reps AS s
+JOIN accounts AS a
+     ON a.sales_rep_id = s.id
+JOIN orders o 
+     ON o.account_id = a.id
+JOIN region r
+     ON r.id = s.region_id
+GROUP BY 
+     rep_name, 
+     region_name
+ORDER BY 
+     sales_rank_by_region_and_first_letter;
 ```
 
 
