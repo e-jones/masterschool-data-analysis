@@ -105,6 +105,68 @@ ORDER BY trip_date
 ```
 
 
+## In-class exercise
+
+```sql
+WITH daily_trips AS (
+  SELECT 
+    EXTRACT(YEAR FROM DATE(start_date)) AS year,
+    DATE(start_date) AS trip_date,
+    COUNT(trip_id) AS total_trips
+  FROM `bigquery-public-data.san_francisco.bikeshare_trips`
+  GROUP BY year, trip_date
+  ORDER BY trip_date
+)
+
+SELECT 
+  *,
+  -- RANK() OVER(
+  --   ORDER BY trip_date
+  -- ) AS day_order,
+
+  -- RANK() OVER(
+  --   ORDER BY total_trips DESC
+  -- ) AS most_popular_days_overall,
+
+  -- RANK() OVER(
+  --   PARTITION BY year
+  --   ORDER BY total_trips DESC
+  -- ) AS most_popular_days_by_year,
+
+  -- yesterdays total rides
+  LAG(total_trips,1,0) OVER(ORDER BY trip_date) AS yesterdays_rides,
+
+  total_trips - LAG(total_trips,1,0) OVER(ORDER BY trip_date) AS change_from_yesterday,
+
+  -- tomorrow's total rides
+  LEAD(total_trips,1,0) OVER(ORDER BY trip_date) AS tomorrow_rides,
+  LEAD(total_trips,365,0) OVER(ORDER BY trip_date) AS this_day_next_year,
+
+  -- rolling weeks avg rides
+  -- running average by day for all time:
+  AVG(total_trips) OVER(ORDER BY trip_date) AS avg_trip_count_all_time,
+
+  -- running average by day BY EACH YEAR (look at Jan 1st to see the avg reset)
+  AVG(total_trips) OVER(PARTITION BY YEAR ORDER BY trip_date) AS avg_trip_count_by_time,
+
+  -- rolling 7 day average ("rolling window"). Smooths the data over:
+  AVG(total_trips) OVER(
+    ORDER BY trip_date
+    -- Looks back at the 6 rows before the current row and the current row itself
+    ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+    ) AS rolling_7_day_avg_trip_count,
+
+ -- running sum (cumulative sum) "running total"
+  SUM(total_trips) OVER(
+    ORDER BY trip_date
+    -- Looks back as far as we can (unbounded) and sum all the trips including todays
+    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) AS running_cumulative_total_trips
+
+FROM daily_trips
+ORDER BY trip_date
+```
+
 ## Additional Reading
 Window functions can get really cool. See some more great examples here:
 https://cloud.google.com/bigquery/docs/reference/standard-sql/window-function-calls
