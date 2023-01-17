@@ -33,7 +33,7 @@ WITH trips_by_day AS
 (
 SELECT 
   DATE(start_date) AS trip_date,
-  COUNT(*) as num_trips
+  COUNT(*) AS num_trips
 FROM `bigquery-public-data.san_francisco.bikeshare_trips`
   WHERE EXTRACT(YEAR FROM start_date) = 2015
   GROUP BY trip_date
@@ -67,11 +67,43 @@ SELECT
             ORDER BY trip_date
             ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
             ) AS cumulative_trip_count
+
 FROM trips_by_day
 ORDER BY trip_date
-
--- Documentation of Window Functions
 ```
+
+## Bonus: Cumulative trips by Station Name
+```sql
+WITH trips_by_day AS
+(
+SELECT 
+  DATE(start_date) AS trip_date,
+  start_station_name,
+  COUNT(*) AS num_trips
+FROM `bigquery-public-data.san_francisco.bikeshare_trips`
+  WHERE EXTRACT(YEAR FROM start_date) = 2015
+  GROUP BY 
+  	trip_date,
+  	start_station_name
+)
+SELECT 
+  trip_date,
+  num_trips,
+  start_station_name,
+
+  -- sum all of the rows that happened before
+  SUM(num_trips) 
+      OVER (
+      		PARTITION BY start_station_name
+            ORDER BY trip_date
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+            ) AS cumulative_trip_count
+
+
+FROM trips_by_day
+ORDER BY trip_date
+```
+
 
 ## Additional Reading
 Window functions can get really cool. See some more great examples here:
