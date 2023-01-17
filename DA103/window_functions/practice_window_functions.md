@@ -161,7 +161,16 @@ SELECT
     ORDER BY trip_date
     -- Looks back as far as we can (unbounded) and sum all the trips including todays
     ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-    ) AS running_cumulative_total_trips
+    ) AS running_cumulative_total_trips,
+
+ -- running sum (cumulative sum) "running total"
+  SUM(total_trips) OVER(
+    ORDER BY trip_date
+    -- Looks back as far as we can (unbounded) and sum all the trips including todays
+    -- BY THE WAY: This code below is the "default" and 
+    -- will actually return the same results!!
+    -- ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) AS running_cumulative_total_trips_v2
 
 FROM daily_trips
 ORDER BY trip_date
